@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Очередь дел</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:var(--tg-theme-bg-color,#fff);--card:var(--tg-theme-secondary-bg-color,#f1f3f5);--tx:var(--tg-theme-text-color,#14181f);--mut:var(--tg-theme-hint-color,#6b7482);--ac:var(--tg-theme-button-color,#2563eb);--actx:var(--tg-theme-button-text-color,#fff)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:15px;margin:18px 2px 8px;color:var(--mut)}
+.sub{color:var(--mut);margin:0 0 12px}
+.card{background:var(--card);border-radius:14px;padding:8px;margin-bottom:10px}
+.row{display:flex;gap:10px;padding:8px;border-radius:10px}
+.row.me{background:var(--ac);color:var(--actx)}
+.row b{min-width:104px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.chip{padding:9px 14px;border-radius:999px;border:0;background:var(--card);color:var(--tx);font-size:15px}
+.chip.on{background:var(--ac);color:var(--actx)}
+.mine{background:var(--ac);color:var(--actx);border-radius:14px;padding:14px;margin-bottom:12px;font-size:18px;font-weight:600}
+.mine small{display:block;font-weight:400;opacity:.9;font-size:14px;margin-bottom:2px}
+.day h3{font-size:15px;margin:4px 8px}
+.day .row{padding:3px 8px;font-size:14px}
+.day .row b{min-width:96px}
+</style>
+</head>
+<body>
+<h1>Очередь дел</h1>
+<p class="sub" id="date"></p>
+<div class="chips" id="chips"></div>
+<div id="mine"></div>
+<div class="card" id="today"></div>
+<h2>Ближайшие дни</h2>
+<div id="next"></div>
+<script>
+try{Telegram.WebApp.ready();Telegram.WebApp.expand()}catch(e){}
+var START=[2026,10,5];
+var P=["Мухаммад 1","Мухаммад 2","Идрис"];
+var G=[["Готовка","Сумка с едой на работу"],["Уборка","Вынос мусора"],["Посуда"]];
+var MG=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+var WD=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+var ME="";try{ME=localStorage.getItem("ochered_me")||""}catch(e){}
+function assign(day){var r=[[],[],[]];G.forEach(function(g,c){var p=(((c+day)%3)+3)%3;r[p]=r[p].concat(g)});return r}
+function dstr(i){var d=new Date(START[0],START[1],START[2]+i);return d.getDate()+" "+MG[d.getMonth()]+", "+WD[d.getDay()]}
+var n=new Date(),t=Math.round((Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())-Date.UTC(START[0],START[1],START[2]))/864e5);
+var shown=t<0?0:t;
+function rows(a){return P.map(function(p,i){return '<div class="row'+(p===ME?' me':'')+'"><b>'+p+'</b><span>'+a[i].join(", ")+'</span></div>'}).join("")}
+function render(){
+  document.getElementById("date").textContent=t<0?"Старт "+dstr(0):"Сегодня, "+dstr(t);
+  document.getElementById("chips").innerHTML='<span style="color:var(--mut)">Я:</span>'+P.map(function(p){return '<button class="chip'+(p===ME?' on':'')+'" data-p="'+p+'">'+p+'</button>'}).join("");
+  var a=assign(shown),i=P.indexOf(ME);
+  document.getElementById("mine").innerHTML=i>=0?'<div class="mine"><small>'+(t<0?"Твои дела в первый день":"Твои дела сегодня")+'</small>'+a[i].join(" + ")+'</div>':"";
+  document.getElementById("today").innerHTML=rows(a);
+  var h="";for(var k=shown+1;k<=shown+6;k++){h+='<div class="card day"><h3>'+dstr(k)+'</h3>'+rows(assign(k))+'</div>'}
+  document.getElementById("next").innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(b){b.onclick=function(){ME=ME===b.dataset.p?"":b.dataset.p;try{localStorage.setItem("ochered_me",ME)}catch(e){}render()}});
+}
+render();
+</script>
+</body>
+</html>
